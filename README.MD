@@ -142,6 +142,61 @@ def lambda_handler(event, context):
                         except Exception as e:
                             print(f"Error deleting snapshot {snapshot_id}: {str(e)}")
 ```
+┌───────────────────────────────────────────┐
+│      Scheduled AMI Creation Process       │
+└───────────────────────────────────────────┘
+            │
+            ▼
+ [Triggered by EventBridge at 3:30 AM daily]
+            │
+            ▼
+  [Lambda Function Starts Execution]
+            │
+            ▼
+ [Load EC2 instance names or IDs for dev/prod]
+            │
+            ▼
+ [For each instance (dev/prod):]
+            │
+            ▼
+ [Create AMI with Tags:
+   - Environment = dev/prod
+   - CreatedBy = LambdaAutomation
+   - Name = <env>-ami-<id>-<timestamp>]
+            │
+            ▼
+      [AMI creation complete]
+
+─────────────────────────────────────────────
+
+┌───────────────────────────────────────────┐
+│         AMI Retention Process             │
+└───────────────────────────────────────────┘
+            │
+            ▼
+ [Triggered by EventBridge daily]
+            │
+            ▼
+ [Lambda fetches AMIs tagged with:
+   CreatedBy = LambdaAutomation]
+            │
+            ▼
+ [For each AMI:]
+            │
+            ▼
+ [Check tag: Environment = dev or prod]
+            │
+            ▼
+ [Calculate age of AMI in hours]
+            │
+            ▼
+ [If dev AND age > 10h] OR [If prod AND age > 168h]
+            │
+            ▼
+ [Deregister AMI and delete snapshots]
+            │
+            ▼
+      [Cleanup completed]
 
 ---
 
